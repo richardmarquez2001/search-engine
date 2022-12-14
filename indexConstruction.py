@@ -12,6 +12,8 @@ from tqdm import tqdm
 # import lxml
 import os
 
+from helperFiles import helpermaker
+
 
 class index_construction:
 
@@ -34,6 +36,7 @@ class index_construction:
         self.document_frequency = {}
         self.postinglist_dict = {}
         self.clean_docs_dict = {}
+        self.clean_docs_dict_true = {}
         self.stemmed_cache = {}
         self.exec_time = 0
         self.title_file_name = "docTitleDict"
@@ -77,9 +80,11 @@ class index_construction:
         for name in self.names:
             self.init_path(
                 self.extension[1:]+"/"+self.posting_file_name+self.extension+"/"+name+".json")
-        # make cleaned doc file
+        # make cleaned doc files
         self.init_path(
             self.extension[1:]+"/"+self.clean_docs_file_name+self.extension+".json")
+        self.init_path(
+            self.extension[1:]+"/"+self.clean_docs_file_name+self.extension+"_true"+".json")
 
     def get_stopwords(self):
         if not self.stopwords_on:
@@ -213,13 +218,16 @@ class index_construction:
 
                 # Save cleaned
                 self.clean_docs_dict[doc_id] = " ".join(
-                    pre_contents)  # stringify to reduce space
+                    pre_contents)  # Unstemmed dict
+                self.clean_docs_dict_true[doc_id] = " ".join(
+                    pre_contents)  # Stemmmed dict
 
                 if count % 10000 == 0:
                     self.save()
-                if count == 100000:
+                if count == 10000:
                     break
             self.save()
+            helpermaker()
 
     def save_df(self):
         with open(self.extension[1:]+"/"+self.df_file_name+self.extension+".json", 'wb') as f:
@@ -229,19 +237,31 @@ class index_construction:
         with open(self.extension[1:]+"/"+self.clean_docs_file_name+self.extension+".json", 'wb') as f:
             f.write(orjson.dumps(self.clean_docs_dict))
 
+        with open(self.extension[1:]+"/"+self.clean_docs_file_name+self.extension+"_true"+".json", 'wb') as f:
+            f.write(orjson.dumps(self.clean_docs_dict_true))
+
     def save_dt(self):
         with open(self.extension[1:]+"/"+self.title_file_name+self.extension+".json", 'wb') as f:
             f.write(orjson.dumps(self.document_title_dict))
 
+    # Unstemmed
     def load_cd(self):
         with open(self.extension[1:]+"/"+self.clean_docs_file_name+self.extension+".json", 'rb') as clean:
             return orjson.loads(clean.read())
 
+    # Stemmed
+    def load_cd_true(self):
+        with open(self.extension[1:]+"/"+self.clean_docs_file_name+self.extension+"_true"+".json", 'rb') as clean:
+            return orjson.loads(clean.read())
+
     def load_and_merge_cd(self):
         self.clean_docs_dict = self.load_cd() | self.clean_docs_dict
+        self.clean_docs_dict_true = self.load_cd_true() | self.clean_docs_dict_true
         self.save_cd()
         del self.clean_docs_dict
+        del self.clean_docs_dict_true
         self.clean_docs_dict = {}
+        self.clean_docs_dict_true = {}
 
     def save(self):
         self.add_to_post()

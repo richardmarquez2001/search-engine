@@ -2,3 +2,5 @@ ngrok.exe
 vector_model
 knn_model
 .DS_Store
+stem_nostop
+__pycache__
