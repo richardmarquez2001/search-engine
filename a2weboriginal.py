@@ -4,21 +4,11 @@ import time
 import orjson
 import math
 import regex as re
-import numpy as np
-import seaborn as sn
-import matplotlib.pyplot as plt
 
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pickle
 
-from sklearn.metrics.pairwise import cosine_similarity
-from scipy.cluster.hierarchy import ward, dendrogram
-from scipy.cluster.hierarchy import ClusterWarning
-from warnings import simplefilter
-simplefilter("ignore", ClusterWarning)
-
-from wordcloud import WordCloud
 
 class BestMatch25:
     def __init__(
@@ -130,6 +120,7 @@ class KNN:
                 for topic in topics:
                     X_train.append(cd[doc_id])
                     y_train.append(topic)
+
         self.vectorizer = TfidfVectorizer()
         vectors = self.vectorizer.fit_transform(X_train)
         knn = KNeighborsClassifier(n_neighbors=5)
@@ -420,56 +411,9 @@ class Query:
             count += 1
             doc_topic = nb.getDocTopic(doc_id)
             results.append({"rank": count, "doc_id": doc_id,
-                            "title": self.titles[doc_id], "score": score, "topic": ", ".join(doc_topic), "summary": self.generate_summary(doc_id, query_nostem, 25)})
-
-
-        self.visualization(results, query_nostem)
+                            "title": self.titles[doc_id], "score": score, "topic": ", ".join(doc_topic), "summary": self.generate_summary(doc_id, query_nostem, 10)})
         return results
-    
-    # Visualization 
-    def visualization(self, result, query_nostem):
-        documents = []
-        labels = []
-        for doc in result[:30]: # Creates visualization for the top 30 results
-            doc_id = doc["doc_id"]
-            labels.append(doc["title"])
-            documents.append(self.generate_summary(doc_id, query_nostem, 100))
-        
-        # Computing document similarities
-        self.vectorizer = TfidfVectorizer()
-        vectors = self.vectorizer.fit_transform(documents)
-        terms = self.vectorizer.get_feature_names_out()
 
-        doc_similarities = cosine_similarity(vectors)
-        distance = 1 - doc_similarities
-        clustering_matrix = ward(distance)
-        
-        # Dendrogram
-        plt.figure(figsize = (15,20))
-        dendrogram(clustering_matrix, orientation="right", labels=labels);
-        plt.tick_params(axis= 'x', which='both', bottom='off', top='off', labelbottom="on")
-        plt.tight_layout() 
-        plt.savefig('query_dendrogram.png', dpi=300) 
-
-        # Heatmap
-        plt.figure(figsize = (20,15))
-        sn.heatmap(doc_similarities, xticklabels=labels, yticklabels=labels)
-        plt.tight_layout() 
-        plt.savefig('query_heatmap.png', dpi=300) 
-        
-        # Wordcloud
-        bag_of_words = " ".join(terms)
-        wordcloud = WordCloud(width = 850, height = 850,
-                background_color ='white',
-                min_font_size = 10).generate(bag_of_words)
- 
-        plt.figure(figsize = (15, 15), facecolor = None)
-        plt.imshow(wordcloud)
-        plt.axis("off")
-        plt.tight_layout(pad = 5)
-        plt.savefig('query_word_cloud.png', dpi=300)        
-        plt.show()
-      
     def generate_summary(self, doc_id, query, size):
         summary = ""
         doc = self.cleaned_docs[doc_id].split(" ")
@@ -490,6 +434,3 @@ class Query:
         exec_time = time.time() - start_time
 
         return {"result": results, "time": exec_time}
-
-Q = Query()
-Q.search_index("computer science", "all")
