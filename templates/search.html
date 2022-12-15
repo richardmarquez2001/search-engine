@@ -89,7 +89,7 @@
                 {% for res in result.result %}
                 <div class="search-item">
                   <div class="row">
-                    <h4 class="mb-1 col-6 text-left d-inline-block"><a href="#">{{ res.title }}</a></h4>
+                    <h4 class="mb-1 col-6 text-left d-inline-block"><a href={{res.url}}>{{ res.title }}</a></h4>
                     <h3 class="mb-1 col-6 text-right d-inline-block  text-muted"> #{{ res.rank }} </h3>
                   </div>
                   <div class="font-13 text-success mb-3">Doc No.{{ res.doc_id }}</div>

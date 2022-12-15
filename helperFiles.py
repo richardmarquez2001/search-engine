@@ -1,9 +1,87 @@
 import csv
 import orjson
 import math
+from tqdm import tqdm
+
+import csv
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.neighbors import KNeighborsClassifier
+import orjson
+from sklearn.feature_extraction.text import TfidfVectorizer
+import pickle
+
+
+class KNN:
+    doc_topics = {}
+    topics = {}
+
+    def __init__(self):
+        self.vectorizer = None
+        self.clf = None
+
+        with open(r"stem_nostop/topics_stem_nostop.json", "rb") as topics:
+            self.topics = orjson.loads(topics.read())
+
+    def fit(self):
+        with open(r"stem_nostop/NB_stem_nostop.json", "rb") as NB:
+            _, _, self.doc_topics, _ = orjson.loads(
+                NB.read()).values()
+
+        path = "stem_nostop/cleanDocsDict_stem_nostop_true.json"
+        with open(path, 'rb') as f:
+            cd = orjson.loads(f.read())
+
+        X_train = []
+        y_train = []
+        for doc_id in self.doc_topics.keys():
+            if doc_id in cd:
+                topics = self.doc_topics[doc_id]
+                for topic in topics:
+                    X_train.append(cd[doc_id])
+                    y_train.append(topic)
+
+        self.vectorizer = TfidfVectorizer()
+        vectors = self.vectorizer.fit_transform(X_train)
+        knn = KNeighborsClassifier(n_neighbors=5)
+        self.clf = knn.fit(vectors, y_train)
+
+        knnFile = open('knn_model', 'wb')
+        pickle.dump(self.clf, knnFile)
+        knnFile.close()
+
+        vectorFile = open('vector_model', 'wb')
+        pickle.dump(self.vectorizer, vectorFile)
+        knnFile.close()
+        self.vectorizer = None
+        self.clf = None
+
+    def loadModel(self):
+        self.clf = pickle.load(open('knn_model', 'rb'))
+        self.vectorizer = pickle.load(open('vector_model', 'rb'))
+
+    def predict(self, query):
+        topics = self.clf.predict(self.vectorizer.transform(query))
+        return self.topics[topics[0]]
 
 
 def helpermaker():
+    path = "stem_nostop/cleanDocsDict_stem_nostop.json"
+    t_len = 0
+    count = 0
+    doc_size = {}
+    with open(path, 'rb') as f:
+        cd = orjson.loads(f.read())
+        for key in tqdm(cd.keys()):
+            count += 1
+            d_len = len(cd[key].split(" "))
+            t_len += d_len
+            doc_size[key] = d_len
+
+    path = "stem_nostop/size_stem_nostop.json"
+    with open(path, 'wb') as f:
+        f.write(orjson.dumps({"total_length": t_len,
+                "doc_count": count, "doc_lengths": doc_size}))
+
     # Make topics file
     path = "train_topics_keywords.tsv"
     keywords = {}
@@ -119,3 +197,9 @@ def helpermaker():
     with open(path, 'wb') as f:
         f.write(orjson.dumps({"prior": prior, "condprob": condprob,
                 "doc_to_topics": doc_to_topics, "topics": tp}))
+
+    knn = KNN()
+    knn.fit()
+
+
+helpermaker()

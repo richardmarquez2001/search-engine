@@ -41,10 +41,8 @@ def home():
 
 # @app.route('/test', methods=['GET'])
 # def test():
-#     result = {'result': [{'rank': 1, 'doc_id': '148375', 'title': 'James Taylor', 'score': 6.476306652521549, 'topic': ['Biography/WikiProject Musicians'],
-#                           'summary': 'james taylor american singersongwriter guitarist article solo musician kool gang member ... 100 million records worldwide taylor achieved breakthrough 1970 3 single fire rain 1 hit 1971 recording youve friend written carole king ... '}], 'time': 47.617645263671875}
-#     return render_template('test.html', result=result, query="japan", model="all")
+#     return render_template('test.html')
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=int(os.environ.get("FLASK_RUN_PORT", "80")))
+    app.run(host="0.0.0.0", port=int(os.environ.get("FLASK_RUN_PORT", "801")))
