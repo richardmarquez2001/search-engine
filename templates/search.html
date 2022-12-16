@@ -18,6 +18,9 @@
   <!-- font awesome -->
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
     integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </head>
 
 <body class="bg-light">
@@ -83,6 +86,30 @@
             </div>
             <!-- RESULTS -->
             {% if result %}
+            <div class="row">
+              <div id="div1" class="col-md-12 d-flex justify-content-center align-items-center">
+              </div>
+            </div>
+            <div class="row">
+              <div id="div2" class="col-md-12 d-flex justify-content-center align-items-center">
+              </div>
+            </div>
+            <script type="module">
+              import d3_cl from "https://api.observablehq.com/@d3/color-legend.js?v=3";
+
+              // Ignore the warning this works
+              const chart_data = shuffle({{ result | tojson }}.result.slice(0, 20));
+              const chart = BubbleChart(chart_data, {
+                name: (result) => result.title,
+                value: (result) => 1 / result.rank,
+                link: (result) => result.url,
+                group: (result) => result.topic.split(",").join(" + "),
+                width: 1600,
+                height: 900
+              });
+              document.getElementById("div2").appendChild(chart);
+              document.getElementById("div1").insertAdjacentHTML('afterbegin', Swatches(chart.scales.color).replaceAll(',', ''));
+            </script>
             <div class="row">
               <div class="col-md-12">
                 <hr />

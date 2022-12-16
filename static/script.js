@@ -118,24 +118,142 @@ function BubbleChart(
     return Object.assign(svg.node(), { scales: { color } });
 }
 
-data = {
-    A: 1,
-    B: 2,
-};
-data = [
-    ["A", 1],
-    ["B", 2],
-    ["C", 3],
-    ["D", 4],
-    ["E", 5],
-];
-const aname = ["A", "B", "C", "D", "E"];
-const avalue = [1, 2, 3, 4, 5];
+// Copyright 2021, Observable Inc.
+// Released under the ISC license.
+// https://observablehq.com/@d3/color-legend
+function Swatches(
+    color,
+    {
+        columns = null,
+        format,
+        unknown: formatUnknown,
+        swatchSize = 15,
+        swatchWidth = swatchSize,
+        swatchHeight = swatchSize,
+        marginLeft = 0,
+    } = {}
+) {
+    const id = `-swatches-${Math.random().toString(16).slice(2)}`;
+    const unknown = formatUnknown == null ? undefined : color.unknown();
+    const unknowns =
+        unknown == null || unknown === d3.scaleImplicit ? [] : [unknown];
+    const domain = color.domain().concat(unknowns);
+    if (format === undefined)
+        format = (x) => (x === unknown ? formatUnknown : x);
 
-lables = ["A", "B", "C", "D", "E"];
-const element = document.getElementById("div1");
-chart = BubbleChart(data, { name: aname, value: avalue });
-element.appendChild(chart);
+    function entity(character) {
+        return `&#${character.charCodeAt(0).toString()};`;
+    }
 
-funcw = ([x]) => x;
-funcw(data);
+    if (columns !== null)
+        return `<div
+            style="display: flex; align-items: center; margin-left: ${+marginLeft}px; min-height: 33px; font: 10px sans-serif;"
+        >
+            <style>
+                .${id}-item {
+                    break-inside: avoid;
+                    display: flex;
+                    align-items: center;
+                    padding-bottom: 1px;
+                }
+
+                .${id}-label {
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    max-width: calc(100% - ${+swatchWidth}px - 0.5em);
+                }
+
+                .${id}-swatch {
+                    width: ${+swatchWidth}px;
+                    height: ${+swatchHeight}px;
+                    margin: 0 0.5em 0 0;
+                }
+            </style>
+            <div style=${{ width: "100%", columns }}>
+                ${domain.map((value) => {
+                    const label = `${format(value)}`;
+                    return `<div class="${id}-item">
+                        <div
+                            class="${id}-swatch"
+                            style=${{ background: color(value) }}
+                        ></div>
+                        <div class="${id}-label" title=${label}>${label}</div>
+                    </div>`;
+                })}
+            </div>
+        </div>`;
+
+    return `<div
+        style="display: flex; align-items: center; min-height: 33px; margin-left: ${+marginLeft}px; font: 10px sans-serif;"
+    >
+        <style>
+            .${id} {
+                display: inline-flex;
+                align-items: center;
+                margin-right: 1em;
+            }
+
+            .${id}::before {
+                content: "";
+                width: ${+swatchWidth}px;
+                height: ${+swatchHeight}px;
+                margin-right: 0.5em;
+                background: var(--color);
+            }
+        </style>
+        <div>
+            ${domain.map(
+                (value) =>
+                    `<span class="${id}" style="--color: ${color(value)}"
+                        >${format(value)}</span
+                    >`
+            )}
+        </div>
+    </div>`;
+}
+
+function shuffle(array) {
+    let currentIndex = array.length,
+        randomIndex;
+
+    // While there remain elements to shuffle.
+    while (currentIndex != 0) {
+        // Pick a remaining element.
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+
+        // And swap it with the current element.
+        [array[currentIndex], array[randomIndex]] = [
+            array[randomIndex],
+            array[currentIndex],
+        ];
+    }
+
+    return array;
+}
+
+// data = {
+//     A: 1,
+//     B: 2,
+// };
+// data = [
+//     ["A", 1],
+//     ["B", 2],
+//     ["C", 3],
+//     ["D", 4],
+//     ["E", 5],
+// ];
+
+// data = [
+//     { title: "T1", score: 1 },
+//     { title: "T2", score: 2 },
+// ];
+
+// getNames = (result) => result.title;
+// getValues = (result) => result.score;
+// // const label = d3.map(data, getNames);
+
+// const element = document.getElementById("div1");
+// chart = BubbleChart(data, { name: getNames, value: getValues });
+// element.appendChild(chart);

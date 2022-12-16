@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request
 # from flask_lt import run_with_lt
-from a2web import Query
+from a2weboriginal import Query
 import os
 import time
 
@@ -39,9 +39,9 @@ def home():
     return render_template('search.html', result=result, query=query, model=model, length=length)
 
 
-# @app.route('/test', methods=['GET'])
-# def test():
-#     return render_template('test.html')
+@app.route('/test', methods=['GET'])
+def test():
+    return render_template('test1.html')
 
 
 if __name__ == '__main__':
