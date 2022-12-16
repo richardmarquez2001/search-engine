@@ -153,7 +153,6 @@ class KNN:
         topics = self.clf.predict(self.vectorizer.transform(query))
         return self.topics[topics[0]]
 
-
 class Query:
     postings = {}
     freqs = {}
@@ -423,11 +422,11 @@ class Query:
                             "title": self.titles[doc_id], "score": score, "topic": ", ".join(doc_topic), "summary": self.generate_summary(doc_id, query_nostem, 25)})
 
 
-        self.visualization(results, query_nostem)
+        self.query_visualization(results, query_nostem)
         return results
     
     # Visualization 
-    def visualization(self, result, query_nostem):
+    def query_visualization(self, result, query_nostem):
         documents = []
         labels = []
         for doc in result[:30]: # Creates visualization for the top 30 results
@@ -469,7 +468,42 @@ class Query:
         plt.tight_layout(pad = 5)
         plt.savefig('query_word_cloud.png', dpi=300)        
         plt.show()
-      
+        
+    def global_visualization(self, topics_to_doc, cleaned_docs):
+        
+        # Global Document count of topics bar graph
+        topics = []
+        counts = []
+        for key, value in topics_to_doc.items():
+            topics.append(key)
+            counts.append(len(value))
+
+        plt.figure(figsize = (15, 15))
+        plt.barh(topics, counts)
+        plt.yticks(fontsize=8)
+        plt.xticks(fontsize=8)
+        plt.xlabel("Topics", fontsize=10)
+        plt.ylabel("Number of documents", fontsize=10)
+        plt.title("Topics by the number of documents", fontsize=10)
+        plt.tight_layout()
+        plt.savefig('global_bargraph.png', dpi=300) 
+        
+        # Global WordCloud
+        bag_of_words = ""
+        for key, value in cleaned_docs.items():
+            bag_of_words += value + " "
+            
+        wordcloud = WordCloud(width = 850, height = 850,
+                background_color ='white',
+                min_font_size = 10).generate(bag_of_words)
+ 
+        plt.figure(figsize = (15, 15), facecolor = None)
+        plt.imshow(wordcloud)
+        plt.axis("off")
+        plt.tight_layout(pad = 5)
+        plt.savefig('global_word_cloud.png', dpi=300)        
+        plt.show()            
+            
     def generate_summary(self, doc_id, query, size):
         summary = ""
         doc = self.cleaned_docs[doc_id].split(" ")
@@ -490,6 +524,7 @@ class Query:
         exec_time = time.time() - start_time
 
         return {"result": results, "time": exec_time}
-
-Q = Query()
-Q.search_index("computer science", "all")
+   
+# Q = Query()
+# Q.search_index("computer science", "all")
+# Q.global_visualization(Q.topics_to_doc, Q.cleaned_docs)

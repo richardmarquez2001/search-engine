@@ -1,16 +1,17 @@
 from flask import Flask, render_template, request
 # from flask_lt import run_with_lt
-from a2weboriginal import Query
+# from a2weboriginal import Query
+from a2web import Query
 import os
 import time
 
 Q = Query()
-
 app = Flask(__name__)
 # run_with_lt(app)
 
 
 last_time = {}
+Q.global_visualization(Q.topics_to_doc, Q.cleaned_docs)
 
 
 @app.route('/', methods=['GET', 'POST'])
