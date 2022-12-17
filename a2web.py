@@ -20,6 +20,7 @@ simplefilter("ignore", ClusterWarning)
 
 from wordcloud import WordCloud
 
+plt.switch_backend('Agg')
 class BestMatch25:
     def __init__(
         self,
@@ -420,7 +421,6 @@ class Query:
             doc_topic = nb.getDocTopic(doc_id)
             results.append({"rank": count, "doc_id": doc_id,
                             "title": self.titles[doc_id], "score": score, "topic": ", ".join(doc_topic), "summary": self.generate_summary(doc_id, query_nostem, 25)})
-
 
         self.query_visualization(results, query_nostem)
         return results
