@@ -59,6 +59,7 @@
                           onclick="$('#results').hide();$('#loading').removeClass('invisible'); myform.submit()"
                           class="btn btn-primary">Search</button>
                       </form>
+                      <button onclick="$('#g_visual').toggle();" class="btn btn-secondary">View Global Visualizations</button>
                     </div>
                   </div>
 
@@ -68,6 +69,12 @@
                       <span class="sr-only">Loading...</span>
                     </div>
                   </div>
+                  
+                  <!-- GLOBAL VISUALIZATIONS -->
+                  <div id="g_visual">
+                    <img src="global_bargraph.png" />
+                    <img src="global_word_cloud.png" />
+                  </div> 
 
                   <!-- QUERY REMINDER -->
                   {% if result %}
@@ -94,6 +101,12 @@
               <div id="div2" class="col-md-12 d-flex justify-content-center align-items-center">
               </div>
             </div>
+            {% for imgsrc in visualdata %}
+              <div>
+                <img class="query_vis" src="data:image/png;base64,{{imgsrc}}">
+              </div>
+            {% endfor %}
+
             <script type="module">
               import d3_cl from "https://api.observablehq.com/@d3/color-legend.js?v=3";
 

@@ -1,5 +1,8 @@
 import porterAlgo
 
+from io import BytesIO
+import base64
+
 import time
 import orjson
 import math
@@ -7,6 +10,7 @@ import regex as re
 import numpy as np
 import seaborn as sn
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -422,8 +426,18 @@ class Query:
             results.append({"rank": count, "doc_id": doc_id,
                             "title": self.titles[doc_id], "score": score, "topic": ", ".join(doc_topic), "summary": self.generate_summary(doc_id, query_nostem, 25)})
 
-        self.query_visualization(results, query_nostem)
-        return results
+        visualization_data = self.query_visualization(results, query_nostem)
+        return results, visualization_data
+    
+    def _convertToHTML(self, obj):
+        canvas = FigureCanvasAgg(obj)
+        png_output = BytesIO()
+        canvas.print_png(png_output)
+
+        # Encode the image data as a base64 string
+        image_data = base64.b64encode(png_output.getvalue()).decode()
+
+        return image_data
     
     # Visualization 
     def query_visualization(self, result, query_nostem):
@@ -444,30 +458,31 @@ class Query:
         clustering_matrix = ward(distance)
         
         # Dendrogram
-        plt.figure(figsize = (15,20))
-        dendrogram(clustering_matrix, orientation="right", labels=labels);
+        dendogram_i = plt.figure(figsize = (15,20))
+        dendrogram(clustering_matrix, orientation="right", labels=labels)
         plt.tick_params(axis= 'x', which='both', bottom='off', top='off', labelbottom="on")
         plt.tight_layout() 
-        plt.savefig('query_dendrogram.png', dpi=300) 
-
+        dendogram_html = self._convertToHTML(dendogram_i)
+        
         # Heatmap
-        plt.figure(figsize = (20,15))
+        heatmap_i = plt.figure(figsize = (20,15))
         sn.heatmap(doc_similarities, xticklabels=labels, yticklabels=labels)
         plt.tight_layout() 
-        plt.savefig('query_heatmap.png', dpi=300) 
-        
+        heatmap_html = self._convertToHTML(heatmap_i)
+
         # Wordcloud
         bag_of_words = " ".join(terms)
         wordcloud = WordCloud(width = 850, height = 850,
                 background_color ='white',
                 min_font_size = 10).generate(bag_of_words)
- 
-        plt.figure(figsize = (15, 15), facecolor = None)
+        wordcloud_i = plt.figure(figsize = (15, 15), facecolor = None)
         plt.imshow(wordcloud)
         plt.axis("off")
         plt.tight_layout(pad = 5)
-        plt.savefig('query_word_cloud.png', dpi=300)        
-        plt.show()
+        
+        wordcloud_html = self._convertToHTML(wordcloud_i)
+        
+        return [dendogram_html,heatmap_html,wordcloud_html]
         
     def global_visualization(self, topics_to_doc, cleaned_docs):
         
@@ -478,7 +493,7 @@ class Query:
             topics.append(key)
             counts.append(len(value))
 
-        plt.figure(figsize = (15, 15))
+        fig1 = plt.figure(figsize = (15, 15))
         plt.barh(topics, counts)
         plt.yticks(fontsize=8)
         plt.xticks(fontsize=8)
@@ -486,8 +501,7 @@ class Query:
         plt.ylabel("Number of documents", fontsize=10)
         plt.title("Topics by the number of documents", fontsize=10)
         plt.tight_layout()
-        plt.savefig('global_bargraph.png', dpi=300) 
-        
+                
         # Global WordCloud
         bag_of_words = ""
         for key, value in cleaned_docs.items():
@@ -497,12 +511,15 @@ class Query:
                 background_color ='white',
                 min_font_size = 10).generate(bag_of_words)
  
-        plt.figure(figsize = (15, 15), facecolor = None)
+        fig2 = plt.figure(figsize = (15, 15), facecolor = None)
         plt.imshow(wordcloud)
         plt.axis("off")
         plt.tight_layout(pad = 5)
-        plt.savefig('global_word_cloud.png', dpi=300)        
-        plt.show()            
+        
+        fig1_html = self._convertToHTML(fig1)
+        fig2_html = self._convertToHTML(fig2)
+        
+        return [fig1_html, fig2_html]
             
     def generate_summary(self, doc_id, query, size):
         summary = ""
@@ -520,10 +537,10 @@ class Query:
     def search(self, query, model):
         # Handle queries
         start_time = time.time()
-        results = self.search_index(query, model)
+        results, qv = self.search_index(query, model)
         exec_time = time.time() - start_time
 
-        return {"result": results, "time": exec_time}
+        return {"result": results, "time": exec_time, "query_visualizations": qv}
    
 # Q = Query()
 # Q.search_index("computer science", "all")

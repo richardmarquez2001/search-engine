@@ -62,7 +62,7 @@ function BubbleChart(
         .attr("viewBox", [-marginLeft, -marginTop, width, height])
         .attr("style", "max-width: 100%; height: auto; height: intrinsic;")
         .attr("fill", "currentColor")
-        .attr("font-size", 10)
+        // .attr("font-size", 32)
         .attr("font-family", "sans-serif")
         .attr("text-anchor", "middle");
 
@@ -76,7 +76,7 @@ function BubbleChart(
         )
         .attr("target", link == null ? null : linkTarget)
         .attr("transform", (d) => `translate(${d.x},${d.y})`);
-
+    
     leaf.append("circle")
         .attr("stroke", stroke)
         .attr("stroke-width", strokeWidth)
@@ -104,6 +104,7 @@ function BubbleChart(
                 "clip-path",
                 (d) => `url(${new URL(`#${uid}-clip-${d.data}`, location)})`
             )
+            .attr("font-size", 24)
             .selectAll("tspan")
             .data((d) => `${L[d.data]}`.split(/\n/g))
             .join("tspan")

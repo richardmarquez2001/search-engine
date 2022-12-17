@@ -106,6 +106,7 @@ a:link {
     }
 }
 
-tspan {
-    font-size: small;
+
+.query_vis{
+  width: 300px;
 }

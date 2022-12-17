@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 
 last_time = {}
-Q.global_visualization(Q.topics_to_doc, Q.cleaned_docs)
+# g_visualdata = Q.global_visualization(Q.topics_to_doc, Q.cleaned_docs)
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -21,6 +21,8 @@ def home():
         query = None
         model = None
         length = None
+        visualdata = None
+        g_visualdata = None
 
     if request.method == 'POST':
         client_ip = request.remote_addr
@@ -36,8 +38,9 @@ def home():
             print(query, model)
             result = Q.search(query, model)
             length = len(result["result"])
-
-    return render_template('search.html', result=result, query=query, model=model, length=length)
+            visualdata = result["query_visualizations"]
+            
+    return render_template('search.html', result=result, query=query, model=model, length=length, visualdata=visualdata)
 
 
 @app.route('/test', methods=['GET'])
@@ -46,4 +49,4 @@ def test():
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=int(os.environ.get("FLASK_RUN_PORT", "801")))
+    app.run(host="0.0.0.0", port=int(os.environ.get("FLASK_RUN_PORT", "80")))
