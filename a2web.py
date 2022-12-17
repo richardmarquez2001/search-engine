@@ -1,3 +1,4 @@
+from wordcloud import WordCloud
 import porterAlgo
 
 import time
@@ -18,9 +19,10 @@ from scipy.cluster.hierarchy import ClusterWarning
 from warnings import simplefilter
 simplefilter("ignore", ClusterWarning)
 
-from wordcloud import WordCloud
 
 plt.switch_backend('Agg')
+
+
 class BestMatch25:
     def __init__(
         self,
@@ -154,11 +156,13 @@ class KNN:
         topics = self.clf.predict(self.vectorizer.transform(query))
         return self.topics[topics[0]]
 
+
 class Query:
     postings = {}
     freqs = {}
     titles = {}
     cleaned_docs = {}
+    urls = {}
     corpus_info = {}
     topics_to_doc = {}
     stop_words = []
@@ -184,6 +188,7 @@ class Query:
         self.load_ci()
         self.load_cd()
         self.load_ttd()
+        self.load_urls()
 
     def get_stopwords(self):
         with open(self.stopwords_path, 'r') as stopword:
@@ -255,6 +260,12 @@ class Query:
             with open(extension[1:]+"/"+self.topics_to_doc_file_name+extension+".json", 'rb') as topics_to_doc:
                 self.topics_to_doc = orjson.loads(topics_to_doc.read())
 
+    def load_urls(self):
+        extension = self.get_extension()
+        if not self.urls:
+            with open(extension[1:]+"/"+"urls"+extension+".json", 'rb') as urls:
+                self.urls = orjson.loads(urls.read())
+
     def get_window(self, size, index, doc):
         # Gets size terms to left and right of index
         if index < size:
@@ -300,8 +311,8 @@ class Query:
         # Stem the query
         query_stem = map(self.porter_stemming, query_stem)
         query_stem = list(filter(self.remove_invalid, query_stem))
-        # Remove duplicates
-        query_stem = [*set(query_stem)]
+        # # Remove duplicates
+        # query_stem = [*set(query_stem)]
         # query_nostem = list(filter(self.remove_invalid, query_nostem))
 
         # Split the query into posting list groups to easily load them later
@@ -420,20 +431,20 @@ class Query:
             count += 1
             doc_topic = nb.getDocTopic(doc_id)
             results.append({"rank": count, "doc_id": doc_id,
-                            "title": self.titles[doc_id], "score": score, "topic": ", ".join(doc_topic), "summary": self.generate_summary(doc_id, query_nostem, 25)})
+                            "title": self.titles[doc_id], "score": score, "topic": ", ".join(doc_topic), "summary": self.generate_summary(doc_id, [*set(query_nostem)], 25), "url": self.urls[doc_id]})
 
         self.query_visualization(results, query_nostem)
         return results
-    
-    # Visualization 
+
+    # Visualization
     def query_visualization(self, result, query_nostem):
         documents = []
         labels = []
-        for doc in result[:30]: # Creates visualization for the top 30 results
+        for doc in result[:30]:  # Creates visualization for the top 30 results
             doc_id = doc["doc_id"]
             labels.append(doc["title"])
             documents.append(self.generate_summary(doc_id, query_nostem, 100))
-        
+
         # Computing document similarities
         self.vectorizer = TfidfVectorizer()
         vectors = self.vectorizer.fit_transform(documents)
@@ -442,35 +453,36 @@ class Query:
         doc_similarities = cosine_similarity(vectors)
         distance = 1 - doc_similarities
         clustering_matrix = ward(distance)
-        
+
         # Dendrogram
-        plt.figure(figsize = (15,20))
-        dendrogram(clustering_matrix, orientation="right", labels=labels);
-        plt.tick_params(axis= 'x', which='both', bottom='off', top='off', labelbottom="on")
-        plt.tight_layout() 
-        plt.savefig('query_dendrogram.png', dpi=300) 
+        plt.figure(figsize=(15, 20))
+        dendrogram(clustering_matrix, orientation="right", labels=labels)
+        plt.tick_params(axis='x', which='both', bottom='off',
+                        top='off', labelbottom="on")
+        plt.tight_layout()
+        plt.savefig('query_dendrogram.png', dpi=300)
 
         # Heatmap
-        plt.figure(figsize = (20,15))
+        plt.figure(figsize=(20, 15))
         sn.heatmap(doc_similarities, xticklabels=labels, yticklabels=labels)
-        plt.tight_layout() 
-        plt.savefig('query_heatmap.png', dpi=300) 
-        
+        plt.tight_layout()
+        plt.savefig('query_heatmap.png', dpi=300)
+
         # Wordcloud
         bag_of_words = " ".join(terms)
-        wordcloud = WordCloud(width = 850, height = 850,
-                background_color ='white',
-                min_font_size = 10).generate(bag_of_words)
- 
-        plt.figure(figsize = (15, 15), facecolor = None)
+        wordcloud = WordCloud(width=850, height=850,
+                              background_color='white',
+                              min_font_size=10).generate(bag_of_words)
+
+        plt.figure(figsize=(15, 15), facecolor=None)
         plt.imshow(wordcloud)
         plt.axis("off")
-        plt.tight_layout(pad = 5)
-        plt.savefig('query_word_cloud.png', dpi=300)        
+        plt.tight_layout(pad=5)
+        plt.savefig('query_word_cloud.png', dpi=300)
         plt.show()
-        
+
     def global_visualization(self, topics_to_doc, cleaned_docs):
-        
+
         # Global Document count of topics bar graph
         topics = []
         counts = []
@@ -478,7 +490,7 @@ class Query:
             topics.append(key)
             counts.append(len(value))
 
-        plt.figure(figsize = (15, 15))
+        plt.figure(figsize=(15, 15))
         plt.barh(topics, counts)
         plt.yticks(fontsize=8)
         plt.xticks(fontsize=8)
@@ -486,24 +498,24 @@ class Query:
         plt.ylabel("Number of documents", fontsize=10)
         plt.title("Topics by the number of documents", fontsize=10)
         plt.tight_layout()
-        plt.savefig('global_bargraph.png', dpi=300) 
-        
+        plt.savefig('global_bargraph.png', dpi=300)
+
         # Global WordCloud
         bag_of_words = ""
         for key, value in cleaned_docs.items():
             bag_of_words += value + " "
-            
-        wordcloud = WordCloud(width = 850, height = 850,
-                background_color ='white',
-                min_font_size = 10).generate(bag_of_words)
- 
-        plt.figure(figsize = (15, 15), facecolor = None)
+
+        wordcloud = WordCloud(width=850, height=850,
+                              background_color='white',
+                              min_font_size=10).generate(bag_of_words)
+
+        plt.figure(figsize=(15, 15), facecolor=None)
         plt.imshow(wordcloud)
         plt.axis("off")
-        plt.tight_layout(pad = 5)
-        plt.savefig('global_word_cloud.png', dpi=300)        
-        plt.show()            
-            
+        plt.tight_layout(pad=5)
+        plt.savefig('global_word_cloud.png', dpi=300)
+        plt.show()
+
     def generate_summary(self, doc_id, query, size):
         summary = ""
         doc = self.cleaned_docs[doc_id].split(" ")
@@ -524,7 +536,7 @@ class Query:
         exec_time = time.time() - start_time
 
         return {"result": results, "time": exec_time}
-   
+
 # Q = Query()
 # Q.search_index("computer science", "all")
 # Q.global_visualization(Q.topics_to_doc, Q.cleaned_docs)
