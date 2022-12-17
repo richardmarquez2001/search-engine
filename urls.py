@@ -22,7 +22,7 @@ with gzip.open(datasetPath, 'rb') as f:
 
         urls[id] = url
 
-        if count == 10000:
+        if count == 100000:
             break
     path = "stem_nostop/urls_stem_nostop.json"
     with open(path, 'wb') as f:

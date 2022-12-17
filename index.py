@@ -8,11 +8,13 @@ import time
 Q = Query()
 app = Flask(__name__)
 # run_with_lt(app)
-
-
 last_time = {}
-# g_visualdata = Q.global_visualization(Q.topics_to_doc, Q.cleaned_docs)
+   
+barGraphExists = os.path.exists('./global_bargraph.png')
+wordCloudExists = os.path.exists('./global_word_cloud.png')
 
+if not(barGraphExists) and not(wordCloudExists):
+    Q.global_visualization(Q.topics_to_doc, Q.cleaned_docs)
 
 @app.route('/', methods=['GET', 'POST'])
 def home():

@@ -222,9 +222,9 @@ class index_construction:
                 self.clean_docs_dict_true[doc_id] = " ".join(
                     pre_contents)  # Stemmmed dict
 
-                if count % 10000 == 0:
+                if count % 25000 == 0:
                     self.save()
-                if count == 10000:
+                if count == 100000:
                     break
             self.save()
             helpermaker()
