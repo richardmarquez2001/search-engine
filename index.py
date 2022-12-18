@@ -42,7 +42,7 @@ def home():
             result = Q.search(query, model)
             length = len(result["result"])
             visualdata = result["query_visualizations"]
-            if model == "all":
+            if model == "jdrs":
                 model = "JDRS"
     return render_template('search.html', result=result, query=query, model=model, length=length, visualdata=visualdata)
 

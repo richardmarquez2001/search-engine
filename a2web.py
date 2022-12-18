@@ -404,7 +404,7 @@ class Query:
 
         # BM25
         if model == "bm25" or model == "jdrs":
-            if model == "all":
+            if model == "jdrs":
                 bm25 = BestMatch25(query, relevant_docs, self.postings,
                                    self.freqs, self.corpus_info, query_tags=query_pos_tags)
             else:
@@ -554,7 +554,7 @@ class Query:
 
         # Global WordCloud
         bag_of_words = ""
-        for key, value in list(cleaned_docs.items())[:50000]:
+        for key, value in list(cleaned_docs.items())[:2000]:
             bag_of_words += value + " "
 
         wordcloud = WordCloud(width=850, height=850,
@@ -594,6 +594,7 @@ class Query:
         exec_time = time.time() - start_time
 
         return {"result": results, "time": exec_time, "query_visualizations": qv}
+
 
 # Q = Query()
 # Q.search_index("computer science", "all")
