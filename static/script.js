@@ -62,7 +62,7 @@ function BubbleChart(
         .attr("viewBox", [-marginLeft, -marginTop, width, height])
         .attr("style", "max-width: 100%; height: auto; height: intrinsic;")
         .attr("fill", "currentColor")
-        // .attr("font-size", 32)
+        .attr("font-size", 16)
         .attr("font-family", "sans-serif")
         .attr("text-anchor", "middle");
 
@@ -104,7 +104,7 @@ function BubbleChart(
                 "clip-path",
                 (d) => `url(${new URL(`#${uid}-clip-${d.data}`, location)})`
             )
-            .attr("font-size", 24)
+            .attr("font-wrap", "wrap")
             .selectAll("tspan")
             .data((d) => `${L[d.data]}`.split(/\n/g))
             .join("tspan")

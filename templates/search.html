@@ -1,30 +1,45 @@
+<html>
 <head>
-  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="static\styles.css">
+  <script
+    type="text/javascript"
+    src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"
+  ></script>
+  <link rel="stylesheet" type="text/css" href="static\styles.css" />
   <!-- jQuery JavaScript -->
-  <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+  <script
+    src="https://code.jquery.com/jquery-3.5.1.min.js"
     integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2"
-    crossorigin="anonymous"></script>
+    crossorigin="anonymous"
+  ></script>
 
   <!-- Bootstrap JavaScript -->
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+  <script
+    src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
     integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
-    crossorigin="anonymous"></script>
+    crossorigin="anonymous"
+  ></script>
 
   <!-- Bootstrap CSS -->
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
-    integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+  <link
+    rel="stylesheet"
+    href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+    integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk"
+    crossorigin="anonymous"
+  />
 
   <!-- font awesome -->
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
-    integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+  <link
+    rel="stylesheet"
+    href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
+    integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf"
+    crossorigin="anonymous"
+  />
 
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </head>
 
-<body class="bg-light">
-
+<body>
   <div class="content">
     <div class="container">
       <div class="row">
@@ -37,10 +52,19 @@
                   <!-- SEARCH BAR -->
                   <div>
                     <div class="mx-auto d-block">
-                      <form class="form-inline bg-light p-3 rounded d-flex justify-content-center align-items-center"
-                        action="" method="post" novalidate="novalidate" name="myform">
-                        <input type="text" name="query" class="form-control mr-sm-2 w-50"
-                          placeholder="Enter a query...">
+                      <form
+                        class="form-inline p-3 rounded d-flex justify-content-center align-items-center"
+                        action=""
+                        method="post"
+                        novalidate="novalidate"
+                        name="myform"
+                      >
+                        <input
+                          type="text"
+                          name="query"
+                          class="form-control mr-sm-2 w-50"
+                          placeholder="Enter a query..."
+                        />
                         <div class="p-0 mr-sm-2">
                           <select name="model" class="form-control search-slt">
                             <option value="all">Model: All</option>
@@ -55,58 +79,68 @@
                             </option>
                           </select>
                         </div>
-                        <button type="submit" name="submit"
+                        <button
+                          type="submit"
+                          name="submit"
                           onclick="$('#results').hide();$('#loading').removeClass('invisible'); myform.submit()"
-                          class="btn btn-primary">Search</button>
+                          class="btn btn-primary"
+                        >
+                          Search
+                        </button>
                       </form>
-                      <button onclick="$('#g_visual').toggle();" class="btn btn-secondary">View Global Visualizations</button>
+                
                     </div>
                   </div>
-
+                  
                   <!-- LOADER -->
-                  <div id="loading" class="d-flex justify-content-center invisible">
+                  <div
+                    id="loading"
+                    class="d-flex justify-content-center invisible"
+                  >
                     <div class="spinner-border" role="status">
                       <span class="sr-only">Loading...</span>
                     </div>
                   </div>
-                  
-                  <!-- GLOBAL VISUALIZATIONS -->
-                  <div id="g_visual">
-                    <img src="global_bargraph.png" />
-                    <img src="global_word_cloud.png" />
-                  </div> 
+
+                  <!-- GLOBAL VISUALIZATIONS                   
+                    <div class="row">
+                      <div class="col-md-6">
+                        <button data-toggle="modal" data-target="#modal-template" data-img-src="data:image/png;base64,{{imgsrc}}"><img
+                          class="query_vis"
+                          src="global_bargraph.png"
+                        /></button>
+                      </div>
+                      <div class="col-md-6">
+                        <button data-toggle="modal" data-target="#modal-template" data-img-src="data:image/png;base64,{{imgsrc}}"><img
+                          class="query_vis"
+                          src="global_word_cloud.png"
+                        /></button>
+                      </div>
+                    </div> 
+                  -->
 
                   <!-- QUERY REMINDER -->
                   {% if result %}
                   <div class="mt-4 text-center">
-                    <h4>Search Results For "{{ query }}" with {{model}} Model(s)</h4>
-                    <p class="text-muted">{{length}} results in {{result.time}} seconds.</p>
+                    <h4>
+                      Search Results For "{{ query }}" with {{model}} Model(s)
+                    </h4>
+                    <p class="text-muted">
+                      {{length}} results in {{result.time}} seconds.
+                    </p>
                   </div>
                   {% if not result.result %}
                   <div class="mt-4 text-center">
-                    <h4>No Results For "{{ query }}" with {{model}} Model(s)</h4>
+                    <h4>
+                      No Results For "{{ query }}" with {{model}} Model(s)
+                    </h4>
                   </div>
-                  {% endif %}
-                  {% endif %}
+                  {% endif %} {% endif %}
                 </div>
               </div>
             </div>
-            <!-- RESULTS -->
+            <!-- RESULTS VISUALS -->
             {% if result %}
-            <div class="row">
-              <div id="div1" class="col-md-12 d-flex justify-content-center align-items-center">
-              </div>
-            </div>
-            <div class="row">
-              <div id="div2" class="col-md-12 d-flex justify-content-center align-items-center">
-              </div>
-            </div>
-            {% for imgsrc in visualdata %}
-              <div>
-                <img class="query_vis" src="data:image/png;base64,{{imgsrc}}">
-              </div>
-            {% endfor %}
-
             <script type="module">
               import d3_cl from "https://api.observablehq.com/@d3/color-legend.js?v=3";
 
@@ -124,31 +158,78 @@
               document.getElementById("div1").insertAdjacentHTML('afterbegin', Swatches(chart.scales.color).replaceAll(',', ''));
             </script>
             <div class="row">
-              <div class="col-md-12">
-                <hr />
-                {% for res in result.result %}
-                <div class="search-item">
-                  <div class="row">
-                    <h4 class="mb-1 col-6 text-left d-inline-block"><a href={{res.url}}>{{ res.title }}</a></h4>
-                    <h3 class="mb-1 col-6 text-right d-inline-block  text-muted"> #{{ res.rank }} </h3>
-                  </div>
-                  <div class="font-13 text-success mb-3">Doc No.{{ res.doc_id }}</div>
-                  <p class="mb-0 text-muted">{{ res.summary }}</p>
-                  <br>
-                  <div class="row">
-                    <p class="mb-0 text-muted col-6 text-left d-inline-block">{{ res.topic }}</p>
-                    <p class="mb-0 text-muted col-6 text-right d-inline-block">Score: {{ res.score }}</p>
+              <div
+                id="div1"
+                class="col-md-12 d-flex justify-content-center align-items-center"
+              ></div>
+              <div
+                id="div2"
+                class="col-md-12 d-flex justify-content-center align-items-center"
+              ></div>
+            </div>
+            {% include "modal.html" %}
+            <div class="row">
+              {% for imgsrc in visualdata %}
+              <div class="col-md-3">
+                <button data-toggle="modal" data-target="#modal-template" data-img-src="data:image/png;base64,{{imgsrc}}"><img
+                  class="query_vis"
+                  src="data:image/png;base64,{{imgsrc}}"
+                /></button>
+              </div>
+              {% endfor %}
+          </div>
+            <div class="row">
+                  <div class="col-md-12">
+                    {% for res in result.result %}
+                    <div class="search-item">
+                      <div class="row">
+                        <h4
+                          class="mb-1 col-6 text-left d-inline-block result-title"
+                        >
+                          <a class="result-title-link" href="{{res.url}}"
+                            >{{ res.title }}</a
+                          >
+                        </h4>
+                      </div>
+                      <div class="result-summary-wrapper">
+                        <p class="mb-0 result-summary">{{ res.summary }}</p>
+                      </div>
+                      <div class="row result-rankings">
+                        <div class="col-md-6">
+                          <span class="result-label">Ranking: </span>{{res.rank}}
+                        </div>
+                        <div class="col-md-6">
+                          <span class="result-label">Document No: </span
+                          >{{res.doc_id}}
+                        </div>
+                        <div class="col-md-6">
+                          <span class="result-label">Topic: </span>{{res.topic}}
+                        </div>
+                        <div class="col-md-6">
+                          <span class="result-label">Score: </span>{{res.score}}
+                        </div>
+                      </div>
+                      <br />
+                    </div>
+                    {% endfor %}
+                    <div class="clearfix"></div>
                   </div>
                 </div>
-                <hr />{% endfor %}
-                <div class="clearfix"></div>
               </div>
-            </div>
             {% endif %}
           </div>
         </div>
       </div>
     </div>
   </div>
-
 </body>
+<script>
+  $('#modal-template').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget) // Button that triggered the modal
+    var imgSrc = button.data('imgSrc') // Extract info from data-* attributes
+    // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+    var modal = $(this)
+    modal.find('#modal-image').attr('src', imgSrc)
+  })
+</script>
+</html>

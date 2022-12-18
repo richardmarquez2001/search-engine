@@ -24,7 +24,6 @@ def home():
         model = None
         length = None
         visualdata = None
-        g_visualdata = None
 
     if request.method == 'POST':
         client_ip = request.remote_addr
@@ -51,4 +50,4 @@ def test():
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=int(os.environ.get("FLASK_RUN_PORT", "80")))
+    app.run(host="0.0.0.0", port=int(os.environ.get("FLASK_RUN_PORT", "80")), debug=True)
