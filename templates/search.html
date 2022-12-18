@@ -83,7 +83,7 @@
                     </div>
                     <div class="col-md-6">
                       <button data-toggle="modal" data-target="#modal-template"
-                        data-img-src="data:image/png;base64,{{imgsrc}}"><img class="query_vis"
+                        data-img-src="{{ url_for('static', filename='global_word_cloud.png') }}"><img class="query_vis"
                           src="{{ url_for('static', filename='global_word_cloud.png') }}" /></button>
                     </div>
                   </div>
