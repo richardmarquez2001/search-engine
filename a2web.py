@@ -1,3 +1,11 @@
+from warnings import simplefilter
+from scipy.cluster.hierarchy import ClusterWarning
+from scipy.cluster.hierarchy import ward, dendrogram
+from sklearn.metrics.pairwise import cosine_similarity
+import pickle
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neighbors import KNeighborsClassifier
+from nltk.tokenize import PunktSentenceTokenizer
 from wordcloud import WordCloud
 import porterAlgo
 
@@ -12,15 +20,11 @@ import numpy as np
 import seaborn as sn
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+import nltk
+nltk.download('tagsets')
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
 
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.feature_extraction.text import TfidfVectorizer
-import pickle
-
-from sklearn.metrics.pairwise import cosine_similarity
-from scipy.cluster.hierarchy import ward, dendrogram
-from scipy.cluster.hierarchy import ClusterWarning
-from warnings import simplefilter
 simplefilter("ignore", ClusterWarning)
 
 
@@ -36,7 +40,10 @@ class BestMatch25:
         document_frequencys,
         corpus_info,
         k1=1.5,
-        b=0.75
+        b=0.75,
+        query_tags=None,
+        k1_i=1.2,
+        k1_d=0.8
     ):
         self.query = query
         self.relevant_doc_ids = relevant_doc_ids
@@ -47,6 +54,13 @@ class BestMatch25:
         self.corpus_lengths = corpus_info["doc_lengths"]
         self.k1 = k1
         self.b = b
+
+        self.k1_increase = k1*k1_i
+        self.k1_decrease = k1*k1_d
+        self.query_tags = query_tags
+
+        self.pos_tags_k1 = {"CC": self.k1_decrease, "CD": k1, "DT": self.k1_decrease, "EX": self.k1_decrease, "FW": k1, "IN": self.k1_decrease, "JJ": self.k1_increase, "JJR": self.k1_increase, "JJS": self.k1_increase, "LS": self.k1_decrease, "MD": k1, "NN": self.k1_increase, "NNP": self.k1_increase, "NNPS": self.k1_increase, "NNS": self.k1_increase, "PDT": k1, "POS": self.k1_decrease, "PRP": self.k1_decrease,
+                            "PRP$": self.k1_decrease, "RB": k1, "RBR": k1, "RBS": k1, "RP": self.k1_decrease, "SYM": self.k1_decrease, "TO": self.k1_decrease, "UH": self.k1_decrease, "VB": self.k1_increase, "VBD": self.k1_increase, "VBG": self.k1_increase, "VBN": self.k1_increase, "VBP": self.k1_increase, "VBZ": self.k1_increase, "WDT": self.k1_decrease, "WP": self.k1_decrease, "WP$": self.k1_decrease, "WRB": self.k1_decrease}
         self.idf = {}
 
     def calculate_idf(self, term):
@@ -66,13 +80,19 @@ class BestMatch25:
     def score(self, relevant_doc):
         result = 0.0
         doc_length = self.corpus_lengths[relevant_doc]
-        for term in self.query:
+        for i, term in enumerate(self.query):
+            # Get the terms k1 weight if the term tags were given
+            if self.query_tags:
+                k1 = self.pos_tags_k1[self.query_tags[i][1]]
+            else:
+                k1 = self.k1
+
             # check if term is in list of relevant docs
             if term in self.postings and relevant_doc in self.postings[term]:
                 # term freq for doc
                 freq = self.postings[term][relevant_doc][0]
-                numerator = self.idf[term] * freq * (self.k1+1)
-                denominator = freq + self.k1 * \
+                numerator = self.idf[term] * freq * (k1+1)
+                denominator = freq + k1 * \
                     (1.0-self.b+self.b*doc_length/self.average_doclen)
                 result += (numerator / denominator)
             else:
@@ -285,7 +305,7 @@ class Query:
             return False
         return True
 
-    def porter_stemming(self, uncleaned_word):
+    def porter_stemming(self, uncleaned_word, stem):
         # Keep numbers as is
         if uncleaned_word.isnumeric():
             return uncleaned_word
@@ -296,6 +316,9 @@ class Query:
         # Remove stopwords
         if word.lower().replace("\n", "") in self.stop_words or not len(word) > 2:
             return 'None'
+
+        if not stem:
+            return word
 
         # Stem
         word_cleaned = self.porter_stemming_algo.stem(word, 0, len(
@@ -309,23 +332,22 @@ class Query:
 
         for index, term in enumerate(query_stem):
             # Stem
-            query_stem[index] = self.porter_stemming(term)
-            # Still lower and replace for un stemmed version
-            query_nostem[index] = term.lower().replace("\n", "")
+            query_stem[index] = self.porter_stemming(term, True)
+            # Nostem
+            query_nostem[index] = self.porter_stemming(term, False)
 
-        # Stem the query
-        query_stem = map(self.porter_stemming, query_stem)
         query_stem = list(filter(self.remove_invalid, query_stem))
-        # # Remove duplicates
-        # query_stem = [*set(query_stem)]
-        # query_nostem = list(filter(self.remove_invalid, query_nostem))
+
+        query_nostem = list(filter(self.remove_invalid, query_nostem))
+        query_tokenized = nltk.word_tokenize(" ".join(query_nostem))
+        query_pos_tags = nltk.pos_tag(query_tokenized)
 
         # Split the query into posting list groups to easily load them later
         query_dict = {0: [], 1: [], 2: [], 3: [], 4: [], 5: []}
         for term in query_stem:
             query_dict[self.char_to_index(term[0])].append(term)
 
-        return query_stem, query_nostem, query_dict
+        return query_stem, query_nostem, query_pos_tags, query_dict
 
     def idf(self, query):
         idf = {}
@@ -363,7 +385,8 @@ class Query:
         relevant_postings = {}
         # Parse Query
         # Stem query if needed
-        query, query_nostem, query_dict = self.preprocess_query(query)
+        query, query_nostem, query_pos_tags, query_dict = self.preprocess_query(
+            query)
         for range in query_dict.keys():
             if query_dict[range]:
                 # load postings range
@@ -381,8 +404,12 @@ class Query:
 
         # BM25
         if model == "bm25" or model == "all":
-            bm25 = BestMatch25(query, relevant_docs,
-                               self.postings, self.freqs, self.corpus_info)
+            if model == "all":
+                bm25 = BestMatch25(query, relevant_docs, self.postings,
+                                   self.freqs, self.corpus_info, query_tags=query_pos_tags)
+            else:
+                bm25 = BestMatch25(query, relevant_docs,
+                                   self.postings, self.freqs, self.corpus_info)
             scores_bm = bm25.fit()
             del bm25
             scores_bm.sort(key=lambda scores: scores[1], reverse=True)
@@ -440,7 +467,7 @@ class Query:
 
         visualization_data = self.query_visualization(results, query_nostem)
         return results, visualization_data
-    
+
     def _convertToHTML(self, obj):
         canvas = FigureCanvasAgg(obj)
         png_output = BytesIO()
@@ -450,12 +477,13 @@ class Query:
         image_data = base64.b64encode(png_output.getvalue()).decode()
 
         return image_data
-    
-    # Visualization 
+
+    # Visualization
     def query_visualization(self, result, query_nostem):
         documents = []
         labels = []
-        for doc in result[:self.visual_no_of_docs]: # Creates visualization for the top 30 results
+        # Creates visualization for the top 30 results
+        for doc in result[:self.visual_no_of_docs]:
             doc_id = doc["doc_id"]
             labels.append(doc["title"])
             documents.append(self.generate_summary(doc_id, query_nostem, 100))
@@ -470,73 +498,82 @@ class Query:
         clustering_matrix = ward(distance)
 
         # Dendrogram
-        dendogram_i = plt.figure(figsize = (15,20))
+        dendogram_i = plt.figure(figsize=(15, 20))
         dendrogram(clustering_matrix, orientation="right", labels=labels)
-        plt.tick_params(axis= 'x', which='both', bottom='off', top='off', labelbottom="on")
-        plt.title("Top " + str(self.visual_no_of_docs) + " Documents Dendrogram", fontsize=20)        
-        plt.tight_layout() 
+        plt.tick_params(axis='x', which='both', bottom='off',
+                        top='off', labelbottom="on")
+        plt.title("Top " + str(self.visual_no_of_docs) +
+                  " Documents Dendrogram", fontsize=20)
+        plt.tight_layout()
+        plt.savefig('query_dendrogram.png', dpi=300)
         dendogram_html = self._convertToHTML(dendogram_i)
-        
+
         # Heatmap
-        heatmap_i = plt.figure(figsize = (20,15))
+        heatmap_i = plt.figure(figsize=(20, 15))
         sn.heatmap(doc_similarities, xticklabels=labels, yticklabels=labels)
-        plt.title("Top " + str(self.visual_no_of_docs) + " Documents Similarities", fontsize=20)
-        plt.tight_layout() 
+        plt.title("Top " + str(self.visual_no_of_docs) +
+                  " Documents Similarities", fontsize=20)
+        plt.tight_layout()
+        plt.savefig('query_heatmap.png', dpi=300)
         heatmap_html = self._convertToHTML(heatmap_i)
 
         # Wordcloud
         bag_of_words = " ".join(terms)
-        wordcloud = WordCloud(width = 850, height = 850,
-                background_color ='white',
-                min_font_size = 10).generate(bag_of_words)
-        wordcloud_i = plt.figure(figsize = (15, 15), facecolor = None)
+        wordcloud = WordCloud(width=850, height=850,
+                              background_color='white',
+                              min_font_size=10).generate(bag_of_words)
+        wordcloud_i = plt.figure(figsize=(15, 15), facecolor=None)
         plt.imshow(wordcloud)
-        plt.title("Top " + str(self.visual_no_of_docs) +" Document's Most Common Words", fontsize=20) 
+        plt.title("Top " + str(self.visual_no_of_docs) +
+                  " Document's Most Common Words", fontsize=20)
         plt.axis("off")
-        plt.tight_layout(pad = 5)
-        
+        plt.tight_layout(pad=5)
+        plt.savefig('query_word_cloud.png', dpi=300)
         wordcloud_html = self._convertToHTML(wordcloud_i)
-        
-        return [dendogram_html,heatmap_html,wordcloud_html]
-        
+
+        return [dendogram_html, heatmap_html, wordcloud_html]
+
     def global_visualization(self, topics_to_doc, cleaned_docs):
 
-        # Global Document count of topics bar graph
-        topics = []
-        counts = []
-        for key, value in topics_to_doc.items():
-            topics.append(key)
-            counts.append(len(value))
+        # # Global Document count of topics bar graph
+        # topics = []
+        # counts = []
+        # for key, value in topics_to_doc.items():
+        #     topics.append(key)
+        #     counts.append(len(value))
 
-        fig1 = plt.figure(figsize = (15, 15))
-        plt.barh(topics, counts)
-        plt.yticks(fontsize=8)
-        plt.xticks(fontsize=8)
-        plt.xlabel("Topics", fontsize=10)
-        plt.ylabel("Number of documents", fontsize=10)
-        plt.title("Topics By The Number Of Documents", fontsize=10)
-        plt.tight_layout()
-                
+        # fig1 = plt.figure(figsize=(15, 15))
+        # plt.xlim([1900, 2500])
+        # plt.barh(topics, counts)
+        # plt.yticks(fontsize=8)
+        # plt.xticks(fontsize=8)
+        # plt.ylabel("Topics", fontsize=10)
+        # plt.xlabel("Number of documents", fontsize=10)
+        # plt.title("Topics By The Number Of Documents", fontsize=10)
+        # plt.tight_layout()
+
         # Global WordCloud
         bag_of_words = ""
-        for key, value in cleaned_docs.items():
+        for key, value in list(cleaned_docs.items())[:50000]:
             bag_of_words += value + " "
-            
-        wordcloud = WordCloud(width = 850, height = 850,
-                background_color ='white',
-                min_font_size = 10).generate(bag_of_words)
- 
-        fig2 = plt.figure(figsize = (15, 15), facecolor = None)
+
+        wordcloud = WordCloud(width=850, height=850,
+                              background_color='white',
+                              min_font_size=10).generate(bag_of_words)
+
+        fig2 = plt.figure(figsize=(15, 15), facecolor=None)
         plt.imshow(wordcloud)
         plt.title("Common Words In The Dataset", fontsize=20)
         plt.axis("off")
-        plt.tight_layout(pad = 5)
-        
-        fig1_html = self._convertToHTML(fig1)
-        fig2_html = self._convertToHTML(fig2)
-        
-        return [fig1_html, fig2_html]
-            
+        plt.tight_layout(pad=5)
+
+        plt.savefig('global_word_cloud.png', dpi=300)
+
+        # fig1_html = self._convertToHTML(fig1)
+        # fig2_html = self._convertToHTML(fig2)
+
+        # return [fig1_html, fig2_html]
+
     def generate_summary(self, doc_id, query, size):
         summary = ""
         doc = self.cleaned_docs[doc_id].split(" ")
@@ -557,7 +594,9 @@ class Query:
         exec_time = time.time() - start_time
 
         return {"result": results, "time": exec_time, "query_visualizations": qv}
-   
+
+
 # Q = Query()
-# Q.search_index("computer science", "all")
+# print(Q.search_index("computer science", "all"))
 # Q.global_visualization(Q.topics_to_doc, Q.cleaned_docs)
+# Q.idk()

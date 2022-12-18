@@ -9,12 +9,14 @@ Q = Query()
 app = Flask(__name__)
 # run_with_lt(app)
 last_time = {}
-   
+
 barGraphExists = os.path.exists('./global_bargraph.png')
 wordCloudExists = os.path.exists('./global_word_cloud.png')
 
-if not(barGraphExists) and not(wordCloudExists):
-    Q.global_visualization(Q.topics_to_doc, Q.cleaned_docs)
+if not (barGraphExists) and not (wordCloudExists):
+    # Q.global_visualization(Q.topics_to_doc, Q.cleaned_docs)
+    pass
+
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
@@ -40,7 +42,8 @@ def home():
             result = Q.search(query, model)
             length = len(result["result"])
             visualdata = result["query_visualizations"]
-            
+            if model == "all":
+                model = "JDRS"
     return render_template('search.html', result=result, query=query, model=model, length=length, visualdata=visualdata)
 
 
@@ -50,4 +53,5 @@ def test():
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=int(os.environ.get("FLASK_RUN_PORT", "80")), debug=True)
+    app.run(host="0.0.0.0", port=int(
+        os.environ.get("FLASK_RUN_PORT", "80")), debug=True)
