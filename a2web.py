@@ -380,7 +380,7 @@ class Query:
         del relevant_postings
 
         # BM25
-        if model == "bm25" or model == "all":
+        if model == "bm25" or model == "jdrs":
             bm25 = BestMatch25(query, relevant_docs,
                                self.postings, self.freqs, self.corpus_info)
             scores_bm = bm25.fit()
@@ -390,7 +390,7 @@ class Query:
 
         # Naive Bayes
         nb = NaiveBayes()
-        if model == "naive" or model == "all":
+        if model == "naive" or model == "jdrs":
             # Generate the naive basyes classification of the query
             topics_naive = nb.getQueryTopic(query)
 
@@ -402,7 +402,7 @@ class Query:
         # KNN
         knn = KNN()
         knn.loadModel()
-        if model == "knn" or model == "all":
+        if model == "knn" or model == "jdrs":
             # Generate the knn classification of the query
             topic_knn = knn.predict([" ".join(query)])
 
@@ -410,9 +410,9 @@ class Query:
                 # Get docs with this category
                 scores, max_score = self.get_topic_scores(query, topic_knn)
 
-        # All
+        # JDRS
         # Use rel docs from
-        if model == "all":
+        if model == "jdrs":
             scores = []
             docs_by_topics = {}
             for doc_id, score in scores_bm:
@@ -558,6 +558,3 @@ class Query:
 
         return {"result": results, "time": exec_time, "query_visualizations": qv}
    
-# Q = Query()
-# Q.search_index("computer science", "all")
-# Q.global_visualization(Q.topics_to_doc, Q.cleaned_docs)
